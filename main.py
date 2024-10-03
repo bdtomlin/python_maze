@@ -1,3 +1,4 @@
+from time import sleep
 from tkinter import Tk, BOTH, Canvas
 
 
@@ -20,29 +21,27 @@ class Line:
 
 class Window:
     def __init__(self, width: int, height: int):
-        self.width = width
-        self.height = height
         self.__root = Tk()
         self.__root.wm_title("Maze")
-        self.canvas = Canvas()
-        self.canvas.pack()
-        self.running = False
-        self.__root.protocol("WM_DELETE_WINDOW", self.close)
+        self.__canvas = Canvas(self.__root, bg="black", height=height, width=width)
+        self.__canvas.pack(fill=BOTH, expand=1)
+        self.__running = False
+        self.__root.protocol("WM_DELETE_WINDOW", self.__close)
 
     def redraw(self):
         self.__root.update_idletasks()
         self.__root.update()
 
     def wait_for_close(self):
-        self.running = True
-        while self.running:
+        self.__running = True
+        while self.__running:
             self.redraw()
 
-    def close(self):
-        self.running = False
+    def __close(self):
+        self.__running = False
 
     def draw_line(self, line: Line, fill_color: str):
-        line.draw(self.canvas, fill_color)
+        line.draw(self.__canvas, fill_color)
 
 
 class Cell:
@@ -86,12 +85,56 @@ class Cell:
         line = Line(self.center(), to_cell.center())
         self._win.draw_line(line, color)
 
-# class Maze():
+
+class Maze:
+    def __init__(self, origin, num_rows, num_cols, cell_size_x, cell_size_y, win):
+        self._origin = origin
+        self._num_rows = num_rows
+        self._num_cols = num_cols
+        self._cell_size_x = cell_size_x
+        self._cell_size_y = cell_size_y
+        self._win = win
+        self._cells = []
+        self._create_cells()
+
+    def _create_cells(self):
+        current_origin = self._origin
+
+        for r in range(self._num_rows):
+            row = []
+            for c in range(self._num_cols):
+                top_left = current_origin
+                bottom_right = Point(
+                    current_origin.x + self._cell_size_x,
+                    current_origin.y + self._cell_size_y,
+                )
+
+                cell = Cell(top_left, bottom_right, self._win)
+                row.append(cell)
+                self._draw_cell(cell)
+                current_origin = Point(bottom_right.x, top_left.y)
+            self._cells.append(row)
+            current_origin = Point(self._origin.x, bottom_right.y)
+
+    def _draw_cell(self, cell):
+        cell.draw()
+        self._animate()
+
+    def _animate(self):
+        self._win.redraw()
+        sleep(0.005)
 
 
 def main():
     # test_cell_drawing()
     # test_draw_move()
+    test_create_maze()
+
+
+def test_create_maze():
+    win = Window(1200, 1000)
+    Maze(Point(5, 5), 20, 20, 20, 20, win)
+    win.wait_for_close()
 
 
 def test_draw_move():
